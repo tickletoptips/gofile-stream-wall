@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Gofile Streaming Wall</title>
+<title>Gofile Album Viewer</title>
 
 <style>
 
 body{
-background:#0f0f0f;
 font-family:Arial;
+background:#111;
 color:white;
 margin:0;
 padding:20px;
@@ -16,298 +16,86 @@ padding:20px;
 
 h1{
 text-align:center;
-margin-bottom:20px;
 }
 
-#controls{
-display:flex;
-justify-content:center;
-gap:10px;
+#input{
+text-align:center;
 margin-bottom:20px;
-flex-wrap:wrap;
 }
 
 input{
 padding:10px;
-border-radius:6px;
-border:none;
-width:320px;
+width:400px;
 }
 
 button{
-padding:10px 15px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-background:#00c8ff;
+padding:10px;
 }
 
 #grid{
 display:grid;
-grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-gap:18px;
-}
-
-.card{
-background:#1a1a1a;
-border-radius:8px;
-padding:8px;
-position:relative;
-}
-
-.thumb{
-width:100%;
-border-radius:6px;
-cursor:pointer;
+grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+gap:20px;
 }
 
 video{
 width:100%;
-border-radius:6px;
-display:none;
-}
-
-.title{
-font-size:13px;
-margin-top:6px;
-word-break:break-all;
-}
-
-.links{
-margin-top:5px;
-}
-
-.links a{
-color:#00c8ff;
-margin-right:10px;
-font-size:12px;
-text-decoration:none;
-}
-
-#playlist{
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-background:#000;
-padding:10px;
-display:flex;
-gap:10px;
-overflow-x:auto;
-}
-
-.playitem{
-font-size:12px;
-cursor:pointer;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<h1>Gofile Album Streaming Wall</h1>
+<h1>Gofile Album Viewer</h1>
 
-<div id="controls">
+<div id="input">
 
 <input id="album" placeholder="Paste Gofile album link">
 
-<input id="search" placeholder="Search video">
-
-<button onclick="loadAlbum()">Load Album</button>
-
-<button onclick="downloadAll()">Mass Download</button>
-
-<button onclick="refreshAlbum()">Refresh</button>
+<button onclick="loadAlbum()">Load</button>
 
 </div>
 
 <div id="grid"></div>
 
-<div id="playlist"></div>
-
 <script>
-
-let files=[]
-let visibleCount=0
-let albumID=""
-
-function getAlbumFromURL(){
-
-const params=new URLSearchParams(location.search)
-
-if(params.get("album")){
-
-document.getElementById("album").value=
-"https://gofile.io/d/"+params.get("album")
-
-loadAlbum()
-
-}
-
-}
 
 async function loadAlbum(){
 
-const url=document.getElementById("album").value
+let url=document.getElementById("album").value
 
-albumID=url.split("/").pop()
+let id=url.split("/").pop()
 
-history.replaceState(null,null,"?album="+albumID)
+let api="https://api.gofile.io/contents/"+id+"?wt=4fd6sg89d7s6"
 
-const api="https://api.gofile.io/contents/"+albumID
+let res=await fetch(api)
 
-const res=await fetch(api)
+let data=await res.json()
 
-const json=await res.json()
+let grid=document.getElementById("grid")
 
-files=Object.values(json.data.contents).filter(x=>x.type=="file")
+grid.innerHTML=""
 
-visibleCount=0
+let files=data.data.contents
 
-document.getElementById("grid").innerHTML=""
+for(let key in files){
 
-renderMore()
+let f=files[key]
 
-}
+if(f.type!="file") continue
 
-function renderMore(){
+let video=document.createElement("video")
 
-const grid=document.getElementById("grid")
+video.src=f.link
 
-const batch=files.slice(visibleCount,visibleCount+20)
+video.controls=true
 
-batch.forEach(file=>{
-
-const card=document.createElement("div")
-
-card.className="card"
-
-const thumb=document.createElement("img")
-
-thumb.className="thumb"
-
-thumb.src="https://picsum.photos/400/225?random="+Math.random()
-
-const vid=document.createElement("video")
-
-vid.src=file.link
-
-vid.controls=true
-
-thumb.onmouseenter=()=>{
-
-vid.style.display="block"
-thumb.style.display="none"
-vid.play()
-
-}
-
-vid.onmouseleave=()=>{
-
-vid.pause()
-vid.style.display="none"
-thumb.style.display="block"
-
-}
-
-card.appendChild(thumb)
-
-card.appendChild(vid)
-
-const title=document.createElement("div")
-
-title.className="title"
-
-title.textContent=file.name
-
-card.appendChild(title)
-
-const links=document.createElement("div")
-
-links.className="links"
-
-links.innerHTML=
-`<a href="${file.link}" target="_blank">Open</a>
-<a href="${file.link}" download>Download</a>
-<a onclick="addPlaylist('${file.link}','${file.name}')">Playlist</a>`
-
-card.appendChild(links)
-
-grid.appendChild(card)
-
-})
-
-visibleCount+=20
-
-}
-
-window.onscroll=()=>{
-
-if(window.innerHeight+window.scrollY>=document.body.offsetHeight-800){
-
-renderMore()
+grid.appendChild(video)
 
 }
 
 }
-
-function addPlaylist(link,name){
-
-const list=document.getElementById("playlist")
-
-const item=document.createElement("div")
-
-item.className="playitem"
-
-item.textContent=name
-
-item.onclick=()=>{
-
-window.open(link)
-
-}
-
-list.appendChild(item)
-
-}
-
-function downloadAll(){
-
-files.forEach(file=>{
-
-window.open(file.link)
-
-})
-
-}
-
-function refreshAlbum(){
-
-loadAlbum()
-
-}
-
-document.getElementById("search").addEventListener("input",function(){
-
-const q=this.value.toLowerCase()
-
-const cards=document.querySelectorAll(".card")
-
-cards.forEach((card,i)=>{
-
-const name=files[i].name.toLowerCase()
-
-card.style.display=name.includes(q)?"block":"none"
-
-})
-
-})
-
-getAlbumFromURL()
-
-setInterval(refreshAlbum,300000)
 
 </script>
 
