@@ -19,34 +19,26 @@ text-align:center;
 }
 
 .grid{
-
 display:grid;
 grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
 grid-gap:20px;
-
 }
 
 .card{
-
 background:#1a1a1a;
 padding:10px;
 border-radius:10px;
-
 }
 
 video{
-
 width:100%;
 border-radius:8px;
-
 }
 
 .name{
-
 margin-top:8px;
 font-size:14px;
 opacity:.8;
-
 }
 
 </style>
@@ -60,48 +52,48 @@ opacity:.8;
 
 <script>
 
-const albumID = "wFO7WM";
+const albumID = "wFO7WM"
+
+const WORKER = "https://gofile-proxy.tickletoptips.workers.dev"
 
 async function loadAlbum(){
 
-const res = await fetch(
-`https://api.gofile.io/contents/${albumID}?wt=4fd6sg89d7s6`
-);
+const res = await fetch(`${WORKER}/album?id=${albumID}`)
+const data = await res.json()
 
-const data = await res.json();
+const files = data.data.contents
 
-const files = data.data.contents;
-
-const grid = document.getElementById("grid");
+const grid = document.getElementById("grid")
 
 for(const key in files){
 
-const file = files[key];
+const file = files[key]
 
-if(file.type !== "file") continue;
+if(file.type !== "file") continue
 
-const card = document.createElement("div");
-card.className = "card";
+const card = document.createElement("div")
+card.className = "card"
 
-const video = document.createElement("video");
-video.src = file.link;
-video.controls = true;
-video.preload = "metadata";
+const video = document.createElement("video")
 
-const name = document.createElement("div");
-name.className = "name";
-name.textContent = file.name;
+video.src = `${WORKER}/file?url=${encodeURIComponent(file.link)}`
+video.controls = true
+video.preload = "metadata"
 
-card.appendChild(video);
-card.appendChild(name);
+const name = document.createElement("div")
+name.className = "name"
+name.textContent = file.name
 
-grid.appendChild(card);
+card.appendChild(video)
+card.appendChild(name)
+
+grid.appendChild(card)
 
 }
 
 }
 
-loadAlbum();
+loadAlbum()
 
 </script>
 
