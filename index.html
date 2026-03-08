@@ -7,131 +7,101 @@
 <style>
 
 body{
-background:#111;
-color:white;
+background:#0f0f0f;
 font-family:Arial;
+margin:0;
 padding:20px;
+color:white;
 }
 
-#controls{
+h1{
 text-align:center;
-margin-bottom:20px;
 }
 
-input{
-padding:10px;
-width:420px;
-}
+.grid{
 
-button{
-padding:10px;
-}
-
-#error{
-background:#ff4444;
-padding:10px;
-display:none;
-margin-top:10px;
-}
-
-#grid{
 display:grid;
-grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-gap:20px;
-margin-top:20px;
+grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+grid-gap:20px;
+
+}
+
+.card{
+
+background:#1a1a1a;
+padding:10px;
+border-radius:10px;
+
 }
 
 video{
+
 width:100%;
+border-radius:8px;
+
+}
+
+.name{
+
+margin-top:8px;
+font-size:14px;
+opacity:.8;
+
 }
 
 </style>
-
 </head>
 
 <body>
 
-<h1>Gofile Album Video Wall</h1>
+<h1>Gofile Album Preview</h1>
 
-<div id="controls">
-
-<input id="album" placeholder="Paste Gofile album link">
-
-<button onclick="loadAlbum()">Load</button>
-
-<div id="error"></div>
-
-</div>
-
-<div id="grid"></div>
+<div id="grid" class="grid"></div>
 
 <script>
 
-function error(msg){
-let e=document.getElementById("error")
-e.style.display="block"
-e.innerText=msg
-}
+const albumID = "wFO7WM";
 
 async function loadAlbum(){
 
-document.getElementById("error").style.display="none"
+const res = await fetch(
+`https://api.gofile.io/contents/${albumID}?wt=4fd6sg89d7s6`
+);
 
-const link=document.getElementById("album").value.trim()
+const data = await res.json();
 
-if(!link){
-error("No album link provided")
-return
-}
+const files = data.data.contents;
 
-let id
+const grid = document.getElementById("grid");
 
-try{
-id=link.split("/").pop()
-}catch{
-error("Invalid link")
-return
-}
+for(const key in files){
 
-try{
+const file = files[key];
 
-const proxy="https://api.allorigins.win/raw?url="
+if(file.type !== "file") continue;
 
-const res=await fetch(proxy+"https://gofile.io/d/"+id)
+const card = document.createElement("div");
+card.className = "card";
 
-const html=await res.text()
+const video = document.createElement("video");
+video.src = file.link;
+video.controls = true;
+video.preload = "metadata";
 
-const matches=[...html.matchAll(/https:\/\/store\d+\.gofile\.io\/download\/[^"]+/g)]
+const name = document.createElement("div");
+name.className = "name";
+name.textContent = file.name;
 
-if(matches.length==0){
-error("No videos found. Album may be private.")
-return
-}
+card.appendChild(video);
+card.appendChild(name);
 
-const grid=document.getElementById("grid")
-
-grid.innerHTML=""
-
-matches.forEach(m=>{
-
-const url=m[0]
-
-const v=document.createElement("video")
-
-v.src=url
-v.controls=true
-
-grid.appendChild(v)
-
-})
-
-}catch(e){
-
-error("Failed to load album: "+e)
+grid.appendChild(card);
 
 }
 
 }
+
+loadAlbum();
 
 </script>
 
